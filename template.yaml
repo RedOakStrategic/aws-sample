@@ -1,0 +1,82 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  # S3 Buckets
+  RawBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: sample-raw
+      NotificationConfiguration:
+        EventBridgeConfiguration:
+          EventBridgeEnabled: true
+
+  ProcessedBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: sample-processed
+
+  # Lambda Function
+  ProcessingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      ImageConfig:
+        Command: ["app.lambda_handler"]
+      Timeout: 300
+      MemorySize: 1024
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref RawBucket
+        - S3CrudPolicy:
+            BucketName: !Ref ProcessedBucket
+      Environment:
+        Variables:
+          RAW_BUCKET: !Ref RawBucket
+          PROCESSED_BUCKET: !Ref ProcessedBucket
+    Metadata:
+      DockerTag: python3.9-v1
+      DockerContext: ./
+      Dockerfile: Dockerfile
+
+  # EventBridge Rule
+  S3PutEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: "Rule to trigger Lambda on S3 PUT events"
+      EventPattern:
+        source:
+          - aws.s3
+        detail-type:
+          - "Object Created"
+        detail:
+          bucket:
+            name:
+              - !Ref RawBucket
+          object:
+            key:
+              - suffix: ".csv"
+      State: "ENABLED"
+      Targets:
+        - Arn: !GetAtt ProcessingFunction.Arn
+          Id: "ProcessCSVTarget"
+
+  # Lambda Permission for EventBridge
+  LambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref ProcessingFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt S3PutEventRule.Arn
+
+Outputs:
+  RawBucketName:
+    Description: "Raw S3 bucket name"
+    Value: !Ref RawBucket
+  ProcessedBucketName:
+    Description: "Processed S3 bucket name"
+    Value: !Ref ProcessedBucket
+  ProcessingFunctionName:
+    Description: "Processing Lambda function name"
+    Value: !Ref ProcessingFunction
