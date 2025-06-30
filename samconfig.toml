@@ -7,4 +7,3 @@ resolve_image_repos = true
 confirm_changeset = false
 fail_on_empty_changeset = false
 capabilities = "CAPABILITY_IAM"
-image_repositories = ["ProcessingFunction=processingfunction"]
