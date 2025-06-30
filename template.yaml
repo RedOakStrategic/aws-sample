@@ -1,12 +1,17 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
+Parameters:
+  AWSAccountId:
+    Type: String
+    Description: AWS Account ID for resource naming
+
 Resources:
   # S3 Buckets
   RawBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: sample-raw
+      BucketName: !Sub "${AWSAccountId}-proposal-raw"
       NotificationConfiguration:
         EventBridgeConfiguration:
           EventBridgeEnabled: true
@@ -14,7 +19,7 @@ Resources:
   ProcessedBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: sample-processed
+      BucketName: !Sub "${AWSAccountId}-proposal-processed"
 
   # Lambda Function
   ProcessingFunction:
