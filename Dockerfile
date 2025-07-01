@@ -1,7 +1,10 @@
 FROM public.ecr.aws/lambda/python:3.9
 
-# Install system dependencies required for pyarrow
-RUN yum install -y gcc gcc-c++ python3-devel
+# Install system dependencies required for pyarrow and Pillow
+RUN yum install -y gcc gcc-c++ python3-devel \
+    zlib-devel libjpeg-devel openjpeg2-devel \
+    libtiff-devel freetype-devel lcms2-devel \
+    libwebp-devel harfbuzz-devel fribidi-devel
 
 # Copy requirements file
 COPY requirements.txt ${LAMBDA_TASK_ROOT}
