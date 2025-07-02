@@ -28,6 +28,13 @@ def lambda_handler(event, context):
         row_count = len(df)
         print(f"Processing file {source_key} with {row_count} rows")
         
+        # Handle NA values in sex column
+        if 'sex' in df.columns:
+            df['sex'] = df['sex'].fillna('Unknown')
+            # Drop remaining NA values from all columns
+            df = df.dropna()
+            print(f"After NA handling, file has {len(df)} rows")
+        
         # Generate the output key (replace .csv with .parquet)
         output_key = source_key.rsplit('.', 1)[0] + '.parquet'
         
